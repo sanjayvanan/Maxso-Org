@@ -55,22 +55,32 @@ const Transactions = () => {
                 if (t.type === 'deposit') {
                     deps.push({
                         ...t,
-                        from_user: t.to_user || 'Admin',
-                        to_user: t.from_user || t.user_name || `ID:${t.user_id}`,
-                        plan_name: 'Manual Deposit',
-                        transaction_hash: `TXN-${t.id}`
+                        from_user: t.from_user || `ID:${t.user_id}`,
+                        to_user: t.to_user || `ID:${t.reference_user_id}`,
+                        plan_name: t.description || 'Deposit',
+                        transaction_hash: t.transaction_hash || `TXN-${t.id}`
                     });
                 } else if (t.type === 'withdraw') {
                     withs.push({
                         ...t,
                         usercode: t.from_user || `ID:${t.user_id}`,
-                        transaction_hash: `TXN-${t.id}`
+                        transaction_hash: t.transaction_hash || `TXN-${t.id}`
                     });
-                } else if (t.type === 'transfer') {
+                } else if (['transfer', 'roi_income', 'level_income', 'direct_income'].includes(t.type)) {
+                    const isIncome = ['roi_income', 'level_income', 'direct_income'].includes(t.type);
                     trans.push({
                         ...t,
-                        from_user: t.from_user || `ID:${t.user_id}`,
-                        to_user: t.to_user || `ID:${t.reference_user_id}`
+                        // For income types: backend from_user=earner, to_user=source. Swap so From=source, To=earner
+                        from_user: isIncome
+                            ? (t.to_user || t.from_user || `ID:${t.reference_user_id || t.user_id}`)
+                            : (t.from_user || `ID:${t.user_id}`),
+                        to_user: isIncome
+                            ? (t.from_user || t.user_name || `ID:${t.user_id}`)
+                            : (t.to_user || `ID:${t.reference_user_id}`),
+                        type: t.type === 'roi_income' ? 'Daily ROI Income'
+                            : t.type === 'level_income' ? 'Level Income'
+                                : t.type === 'direct_income' ? 'Direct Referral Income'
+                                    : 'Transfer'
                     });
                 }
             });
@@ -147,55 +157,39 @@ const Transactions = () => {
         }
     };
 
-    const handlePrevPage = () => {
-        if (activeTab === 'deposit') setDepositCurrentPage(prev => Math.max(prev - 1, 1));
-        else if (activeTab === 'withdraw') setWithdrawCurrentPage(prev => Math.max(prev - 1, 1));
-        else setTransferCurrentPage(prev => Math.max(prev - 1, 1));
-    };
-
-    const handleNextPage = () => {
-        if (activeTab === 'deposit') {
-            const totalPages = Math.ceil(deposits.length / rowsPerPage);
-            setDepositCurrentPage(prev => Math.min(prev + 1, totalPages));
-        } else if (activeTab === 'withdraw') {
-            const totalPages = Math.ceil(withdraws.length / rowsPerPage);
-            setWithdrawCurrentPage(prev => Math.min(prev + 1, totalPages));
-        } else {
-            const totalPages = Math.ceil(transfers.length / rowsPerPage);
-            setTransferCurrentPage(prev => Math.min(prev + 1, totalPages));
-        }
-    };
-
-    const getCurrentPageData = () => {
+    // Get the full dataset for the active tab, filtered by search
+    const getFilteredData = () => {
         let data = [];
-        let currentPage = 1;
+        if (activeTab === 'deposit') data = deposits;
+        else if (activeTab === 'withdraw') data = withdraws;
+        else data = transfers;
 
-        if (activeTab === 'deposit') {
-            data = deposits;
-            currentPage = depositCurrentPage;
-        } else if (activeTab === 'withdraw') {
-            data = withdraws;
-            currentPage = withdrawCurrentPage;
-        } else {
-            data = transfers;
-            currentPage = transferCurrentPage;
-        }
+        if (!searchTerm.trim()) return data;
 
-        const startIndex = (currentPage - 1) * rowsPerPage;
-        const endIndex = startIndex + rowsPerPage;
-        return data.slice(startIndex, endIndex);
+        const term = searchTerm.toLowerCase();
+        return data.filter(item => {
+            const amount = String(item.amount || '');
+            if (activeTab === 'deposit') {
+                return (item.from_user || '').toLowerCase().includes(term) ||
+                    (item.to_user || '').toLowerCase().includes(term) ||
+                    (item.transaction_hash || '').toLowerCase().includes(term) ||
+                    amount.includes(term);
+            } else if (activeTab === 'withdraw') {
+                return (item.usercode || '').toLowerCase().includes(term) ||
+                    (item.type || '').toLowerCase().includes(term) ||
+                    (item.status || '').toLowerCase().includes(term) ||
+                    amount.includes(term);
+            } else {
+                return (item.from_user || '').toLowerCase().includes(term) ||
+                    (item.to_user || '').toLowerCase().includes(term) ||
+                    (item.type || '').toLowerCase().includes(term) ||
+                    amount.includes(term);
+            }
+        });
     };
 
-    const getTotalCount = () => {
-        if (activeTab === 'deposit') return deposits.length;
-        if (activeTab === 'withdraw') return withdraws.length;
-        return transfers.length;
-    };
-
-    const getTotalPages = () => {
-        const total = getTotalCount();
-        return Math.ceil(total / rowsPerPage);
-    };
+    const getTotalCount = () => getFilteredData().length;
+    const getTotalPages = () => Math.ceil(getTotalCount() / rowsPerPage) || 1;
 
     const getCurrentPage = () => {
         if (activeTab === 'deposit') return depositCurrentPage;
@@ -203,27 +197,33 @@ const Transactions = () => {
         return transferCurrentPage;
     };
 
-    const getFilteredData = () => {
-        const data = getCurrentPageData();
-        if (!searchTerm) return data;
-
-        return data.filter(item => {
-            if (activeTab === 'deposit') {
-                return (item.from_user && item.from_user.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                    (item.to_user && item.to_user.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                    (item.transaction_hash && item.transaction_hash.toLowerCase().includes(searchTerm.toLowerCase()));
-            } else if (activeTab === 'withdraw') {
-                return (item.usercode && item.usercode.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                    (item.type && item.type.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                    (item.transaction_hash && item.transaction_hash.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                    (item.status && item.status.toLowerCase().includes(searchTerm.toLowerCase()));
-            } else {
-                return (item.from_user && item.from_user.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                    (item.to_user && item.to_user.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                    (item.type && item.type.toLowerCase().includes(searchTerm.toLowerCase()));
-            }
-        });
+    // Paginate the already-filtered data
+    const getCurrentPageData = () => {
+        const filtered = getFilteredData();
+        const currentPage = getCurrentPage();
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        return filtered.slice(startIndex, startIndex + rowsPerPage);
     };
+
+    const handlePrevPage = () => {
+        if (activeTab === 'deposit') setDepositCurrentPage(prev => Math.max(prev - 1, 1));
+        else if (activeTab === 'withdraw') setWithdrawCurrentPage(prev => Math.max(prev - 1, 1));
+        else setTransferCurrentPage(prev => Math.max(prev - 1, 1));
+    };
+
+    const handleNextPage = () => {
+        const totalPages = getTotalPages();
+        if (activeTab === 'deposit') setDepositCurrentPage(prev => Math.min(prev + 1, totalPages));
+        else if (activeTab === 'withdraw') setWithdrawCurrentPage(prev => Math.min(prev + 1, totalPages));
+        else setTransferCurrentPage(prev => Math.min(prev + 1, totalPages));
+    };
+
+    // Reset to page 1 when search changes
+    useEffect(() => {
+        setDepositCurrentPage(1);
+        setWithdrawCurrentPage(1);
+        setTransferCurrentPage(1);
+    }, [searchTerm]);
 
     if (loading) return <div className={styles.transactionContainer}><h2 className="text-white">Loading...</h2></div>;
     if (error) return <div className={styles.transactionContainer}><h2 className="text-red-500">{error}</h2></div>;
@@ -322,7 +322,7 @@ const Transactions = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {getFilteredData().map((item, index) => (
+                        {getCurrentPageData().map((item, index) => (
                             <tr key={item.id} className={styles.transactionTr}>
                                 <td className={styles.transactionTdBold}>
                                     {((getCurrentPage() - 1) * rowsPerPage) + index + 1}

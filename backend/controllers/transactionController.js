@@ -180,6 +180,7 @@ const getAdminTransactions = async (req, res, next) => {
         let query = `
       SELECT 
         t.id, t.type, t.amount, t.status, t.created_at,
+        t.user_id, t.reference_user_id, t.transaction_hash, t.description,
         u.referral_code AS "from_user", u.name AS "user_name",
         r.referral_code AS "to_user"
       FROM "Transaction" t
@@ -211,6 +212,7 @@ const getMyTransactions = async (req, res, next) => {
         let query = `
       SELECT 
         t.id, t.type, t.amount, t.status, t.created_at, t.user_id, t.reference_user_id,
+        t.transaction_hash, t.description,
         u.referral_code AS "from_user", u.name AS "user_name",
         r.referral_code AS "to_user"
       FROM "Transaction" t
