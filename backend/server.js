@@ -11,9 +11,15 @@ const app = express()
 
 // middleware
 app.use(cors({
-  origin: 'http://localhost:5174',
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    'https://maxso-org.onrender.com'
+  ],
   credentials: true
 }));
+
 app.use(express.json())
 app.use(cookieParser());
 
