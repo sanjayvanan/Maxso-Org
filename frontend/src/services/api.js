@@ -1,10 +1,17 @@
-// Centralized API service — eliminates repetitive fetch boilerplate
+// Centralized API service — attaches Authorization header from localStorage
 import API_URL from '../config/api';
+
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+};
 
 const api = {
     async get(path) {
         const response = await fetch(`${API_URL}${path}`, {
-            credentials: 'include',
+            headers: getAuthHeaders(),
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -16,9 +23,8 @@ const api = {
     async post(path, data) {
         const response = await fetch(`${API_URL}${path}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(data),
-            credentials: 'include',
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -30,9 +36,8 @@ const api = {
     async put(path, data) {
         const response = await fetch(`${API_URL}${path}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(data),
-            credentials: 'include',
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -44,7 +49,7 @@ const api = {
     async del(path) {
         const response = await fetch(`${API_URL}${path}`, {
             method: 'DELETE',
-            credentials: 'include',
+            headers: getAuthHeaders(),
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -56,9 +61,8 @@ const api = {
     async patch(path, data) {
         const response = await fetch(`${API_URL}${path}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(data),
-            credentials: 'include',
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -68,4 +72,5 @@ const api = {
     },
 };
 
+export { getAuthHeaders };
 export default api;

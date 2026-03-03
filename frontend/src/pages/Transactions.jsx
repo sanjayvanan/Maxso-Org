@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
+import { getAuthHeaders } from '../services/api';
 import styles from '../styles';
 
 const Transactions = () => {
@@ -41,7 +42,7 @@ const Transactions = () => {
                 : `${API_URL}/api/transactions/history`;
 
             const response = await fetch(endpoint, {
-                credentials: 'include'
+                headers: getAuthHeaders()
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Failed to fetch transactions');
@@ -126,9 +127,8 @@ const Transactions = () => {
 
             const res = await fetch(`${API_URL}/api/transactions/${txType}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(payload),
-                credentials: 'include'
             });
 
             const data = await res.json();

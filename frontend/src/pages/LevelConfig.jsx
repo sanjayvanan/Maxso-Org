@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from '../styles';
 import API_URL from '../config/api';
+import { getAuthHeaders } from '../services/api';
 
 const LevelConfig = () => {
     const location = useLocation();
@@ -34,7 +35,7 @@ const LevelConfig = () => {
 
     const fetchLevelConfigs = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/level-configs`, { credentials: 'include' });
+            const response = await fetch(`${API_URL}/api/level-configs`, { headers: getAuthHeaders() });
             if (response.ok) {
                 const data = await response.json();
                 setLevelConfigs(data);
@@ -83,8 +84,7 @@ const LevelConfig = () => {
         try {
             const response = await fetch(`${API_URL}/api/level-configs/${statusModal.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ ...config, status: statusModal.newStatus })
             });
             if (response.ok) {
@@ -115,7 +115,7 @@ const LevelConfig = () => {
         try {
             const response = await fetch(`${API_URL}/api/level-configs/${deleteModal.id}`, {
                 method: 'DELETE',
-                credentials: 'include'
+                headers: getAuthHeaders()
             });
             if (response.ok) {
                 setLevelConfigs(levelConfigs.filter(config => config.id !== deleteModal.id));
@@ -150,8 +150,7 @@ const LevelConfig = () => {
             if (modalData.id) {
                 const response = await fetch(`${API_URL}/api/level-configs/${modalData.id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(modalData)
                 });
                 if (response.ok) {
@@ -167,8 +166,7 @@ const LevelConfig = () => {
             } else {
                 const response = await fetch(`${API_URL}/api/level-configs`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(modalData)
                 });
                 if (response.ok) {

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import styles from '../styles';
 import API_URL from '../config/api';
+import { getAuthHeaders } from '../services/api';
 import { useSelector } from 'react-redux';
 
 const PlansPage = () => {
@@ -39,7 +40,7 @@ const PlansPage = () => {
 
   const fetchPlans = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/plans`, { credentials: 'include' });
+      const response = await fetch(`${API_URL}/api/plans`, { headers: getAuthHeaders() });
       if (response.ok) {
         const data = await response.json();
         setPlans(data);
@@ -59,8 +60,7 @@ const PlansPage = () => {
     try {
       const response = await fetch(`${API_URL}/api/plans/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: getAuthHeaders(),
         body: JSON.stringify({ ...plan, status: newStatus })
       });
       if (response.ok) {
@@ -86,7 +86,7 @@ const PlansPage = () => {
       try {
         const response = await fetch(`${API_URL}/api/plans/${id}`, {
           method: 'DELETE',
-          credentials: 'include'
+          headers: getAuthHeaders()
         });
         if (response.ok) {
           setPlans(plans.filter(plan => plan.id !== id));
@@ -127,8 +127,7 @@ const PlansPage = () => {
       if (modalData.id) {
         const response = await fetch(`${API_URL}/api/plans/${modalData.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: getAuthHeaders(),
           body: JSON.stringify(modalData)
         });
         if (response.ok) {
@@ -143,8 +142,7 @@ const PlansPage = () => {
       } else {
         const response = await fetch(`${API_URL}/api/plans`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: getAuthHeaders(),
           body: JSON.stringify(modalData)
         });
         if (response.ok) {
@@ -196,8 +194,7 @@ const PlansPage = () => {
     try {
       const response = await fetch(`${API_URL}/api/plans/${buyPlan.id}/buy`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           amount: parseFloat(buyAmount),
           depositType: buyDepositType

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
+import { getAuthHeaders } from '../services/api';
+import { verifyUser } from '../features/authSlice';
 import styles from '../styles';
 
 const UserManagement = () => {
@@ -12,6 +14,7 @@ const UserManagement = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { user } = useSelector((state) => state.auth);
+    const dispatch = useDispatch();
     const [openActionId, setOpenActionId] = useState(null);
     const [editModalData, setEditModalData] = useState(null);
 
@@ -30,7 +33,7 @@ const UserManagement = () => {
             setReferralLoading(true);
             try {
                 const response = await fetch(`${API_URL}/api/user/admin/referrals`, {
-                    credentials: 'include',
+                    headers: getAuthHeaders(),
                 });
                 const data = await response.json();
                 if (!response.ok) {
@@ -100,7 +103,7 @@ const UserManagement = () => {
                 }).toString();
 
                 const response = await fetch(`${API_URL}/api/user/admin/users?${query}`, {
-                    credentials: 'include',
+                    headers: getAuthHeaders(),
                 });
                 const data = await response.json();
                 if (!response.ok) {
@@ -151,7 +154,7 @@ const UserManagement = () => {
         try {
             const response = await fetch(`${API_URL}/api/user/admin/users/${id}`, {
                 method: 'DELETE',
-                credentials: 'include'
+                headers: getAuthHeaders()
             });
             if (response.ok) {
                 setUsers(users.filter(u => u.id !== id));
@@ -169,9 +172,12 @@ const UserManagement = () => {
         try {
             const response = await fetch(`${API_URL}/api/user/admin/login-as/${id}`, {
                 method: 'POST',
-                credentials: 'include'
+                headers: getAuthHeaders()
             });
             if (response.ok) {
+                const data = await response.json();
+                if (data.token) localStorage.setItem('token', data.token);
+                dispatch(verifyUser());
                 window.location.href = '/';
             } else {
                 const data = await response.json();
@@ -196,9 +202,8 @@ const UserManagement = () => {
         try {
             const response = await fetch(`${API_URL}/api/user/admin/users/${editModalData.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(editModalData),
-                credentials: 'include'
             });
             if (response.ok) {
                 const { user: updatedUser } = await response.json();
@@ -218,9 +223,8 @@ const UserManagement = () => {
             const newStatus = !u.status;
             const response = await fetch(`${API_URL}/api/user/admin/users/${u.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ status: newStatus }),
-                credentials: 'include'
             });
             if (response.ok) {
                 setUsers(users.map(userItem => userItem.id === u.id ? { ...userItem, status: newStatus } : userItem));

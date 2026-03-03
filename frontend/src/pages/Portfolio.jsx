@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import styles from '../styles';
 import API_URL from '../config/api';
+import { getAuthHeaders } from '../services/api';
 
 const Portfolio = () => {
     const [plans, setPlans] = useState([]);
@@ -16,7 +17,7 @@ const Portfolio = () => {
     const fetchMyPlans = async () => {
         try {
             const response = await fetch(`${API_URL}/api/plans/my-plans`, {
-                credentials: 'include'
+                headers: getAuthHeaders()
             });
             if (response.ok) {
                 const data = await response.json();

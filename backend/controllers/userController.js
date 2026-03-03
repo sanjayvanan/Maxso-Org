@@ -73,15 +73,7 @@ const signupUser = async (req, res, next) => {
     const user = result.rows[0];
     const token = createToken(user.id);
 
-    const isProduction = process.env.NODE_ENV === 'production';
-
-res.cookie('token', token, {
-  httpOnly: true,
-  secure: true,      // required for HTTPS (Render)
-  sameSite: 'none',  // required for Vercel ↔ Render
-  maxAge: 3 * 24 * 60 * 60 * 1000
-});
-    res.status(200).json({ email, name, role: user.role, referral_code });
+    res.status(200).json({ token, email, name, role: user.role, referral_code });
   } catch (error) {
     res.status(400);
     next(error);
@@ -100,19 +92,8 @@ const loginUser = async (req, res, next) => {
       throw Error('Invalid credentials');
     }
 
-
-const token = createToken(user.id);
-
-const isProduction = process.env.NODE_ENV === 'production';
-
-res.cookie('token', token, {
-  httpOnly: true,
-  secure: true,       // since you're on Render (HTTPS)
-  sameSite: 'none',   // required for Vercel ↔ Render
-  maxAge: 3 * 24 * 60 * 60 * 1000
-});
-
-    res.status(200).json({ email: user.email, name: user.name, role: user.role, referral_code: user.referral_code });
+    const token = createToken(user.id);
+    res.status(200).json({ token, email: user.email, name: user.name, role: user.role, referral_code: user.referral_code });
   } catch (error) {
     res.status(400);
     next(error);
@@ -132,9 +113,8 @@ const getMe = async (req, res, next) => {
   }
 };
 
-// Properly clear the httpOnly cookie on logout
+// Logout — token is managed client-side, so just acknowledge
 const logoutUser = (req, res) => {
-  res.cookie('token', '', { httpOnly: true, expires: new Date(0) });
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
@@ -239,17 +219,7 @@ const loginAsUser = async (req, res, next) => {
     // Create a new token for the target user to simulate their session
     const token = createToken(user.id);
 
-    // Replace current cookie with impersonated user's cookie
-    const isProduction = process.env.NODE_ENV === 'production';
-
-res.cookie('token', token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: 'none',
-  maxAge: 3 * 24 * 60 * 60 * 1000
-});
-
-    res.status(200).json({ email: user.email, name: user.name, role: user.role, referral_code: user.referral_code, message: 'Impersonation active' });
+    res.status(200).json({ token, email: user.email, name: user.name, role: user.role, referral_code: user.referral_code, message: 'Impersonation active' });
   } catch (error) {
     res.status(400);
     next(error);

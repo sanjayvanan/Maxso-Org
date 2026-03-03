@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
+import { getAuthHeaders } from '../services/api';
 import styles from '../styles';
 
 const Settings = () => {
@@ -29,7 +30,7 @@ const Settings = () => {
         const fetchProfile = async () => {
             try {
                 const response = await fetch(`${API_URL}/api/user/me`, {
-                    credentials: 'include'
+                    headers: getAuthHeaders()
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -124,8 +125,7 @@ const Settings = () => {
         try {
             const response = await fetch(`${API_URL}/api/user/profile`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
+                headers: getAuthHeaders(),
                 body: JSON.stringify({
                     name: profileData.name,
                     email: profileData.email,
@@ -156,8 +156,7 @@ const Settings = () => {
         try {
             const response = await fetch(`${API_URL}/api/user/password`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
+                headers: getAuthHeaders(),
                 body: JSON.stringify({
                     oldPassword: passwordModal.oldPassword,
                     newPassword: passwordModal.newPassword

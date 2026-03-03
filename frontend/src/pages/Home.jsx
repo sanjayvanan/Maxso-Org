@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
+import { getAuthHeaders } from '../services/api';
 import styles from '../styles';
 
 
@@ -42,7 +43,7 @@ const Home = () => {
     const fetchDashboardStats = async () => {
       try {
         const response = await fetch(`${API_URL}/api/dashboard/stats`, {
-          credentials: 'include',
+          headers: getAuthHeaders(),
         });
         if (response.ok) {
           const data = await response.json();

@@ -1,17 +1,25 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import API_URL from '../config/api.js'
 
+// Helper to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+};
+
 // 1. Verify Session on Page Reload
 export const verifyUser = createAsyncThunk(
   'auth/verifyUser',
   async (_, { rejectWithValue }) => {
     try {
       const response = await fetch(`${API_URL}/api/user/me`, {
-        credentials: 'include'
+        headers: getAuthHeaders()
       });
       const data = await response.json();
       if (!response.ok) return rejectWithValue('Not authenticated');
-      return data; 
+      return data;
     } catch (err) {
       return rejectWithValue('Network error');
     }
@@ -26,11 +34,12 @@ export const loginUser = createAsyncThunk(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-        credentials: 'include' 
       });
       const data = await response.json();
       if (!response.ok) return rejectWithValue(data?.error || 'Login failed');
-      return data; 
+      // Store token in localStorage
+      if (data.token) localStorage.setItem('token', data.token);
+      return data;
     } catch (err) {
       return rejectWithValue('Network error');
     }
@@ -45,28 +54,32 @@ export const signupUser = createAsyncThunk(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
-        credentials: 'include' 
       });
       const data = await response.json();
       if (!response.ok) return rejectWithValue(data?.error || 'Signup failed');
-      return data; 
+      // Store token in localStorage
+      if (data.token) localStorage.setItem('token', data.token);
+      return data;
     } catch (err) {
       return rejectWithValue('Network error');
     }
   }
 );
 
-// 2. Proper Backend Logout
+// 2. Logout — clear token from localStorage
 export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
   async (_, { rejectWithValue }) => {
     try {
       await fetch(`${API_URL}/api/user/logout`, {
         method: 'POST',
-        credentials: 'include'
+        headers: getAuthHeaders()
       });
+      localStorage.removeItem('token');
       return null;
     } catch (err) {
+      // Still clear token even if network fails
+      localStorage.removeItem('token');
       return rejectWithValue('Network error');
     }
   }
@@ -80,7 +93,12 @@ const authSlice = createSlice({
     error: null,
     isAuthReady: false // Wait for initial session check
   },
-  reducers: {},
+  reducers: {
+    // Allow manually setting user (e.g. after impersonation)
+    setUser: (state, action) => {
+      state.user = action.payload;
+    }
+  },
   extraReducers: (builder) => {
     builder
       // Verify User
@@ -96,6 +114,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = null;
         state.isAuthReady = true; // Still ready, just not logged in
+        localStorage.removeItem('token'); // Clean up invalid token
       })
       // Login
       .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; })
@@ -124,4 +143,5 @@ const authSlice = createSlice({
   }
 });
 
+export const { setUser } = authSlice.actions;
 export default authSlice.reducer;
