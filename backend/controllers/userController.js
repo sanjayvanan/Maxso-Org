@@ -73,7 +73,14 @@ const signupUser = async (req, res, next) => {
     const user = result.rows[0];
     const token = createToken(user.id);
 
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Lax', maxAge: 3 * 24 * 60 * 60 * 1000 });
+    const isProduction = process.env.NODE_ENV === 'production';
+
+res.cookie('token', token, {
+  httpOnly: true,
+  secure: true,      // required for HTTPS (Render)
+  sameSite: 'none',  // required for Vercel ↔ Render
+  maxAge: 3 * 24 * 60 * 60 * 1000
+});
     res.status(200).json({ email, name, role: user.role, referral_code });
   } catch (error) {
     res.status(400);
@@ -93,8 +100,18 @@ const loginUser = async (req, res, next) => {
       throw Error('Invalid credentials');
     }
 
-    const token = createToken(user.id);
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Lax', maxAge: 3 * 24 * 60 * 60 * 1000 });
+
+const token = createToken(user.id);
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+res.cookie('token', token, {
+  httpOnly: true,
+  secure: true,       // since you're on Render (HTTPS)
+  sameSite: 'none',   // required for Vercel ↔ Render
+  maxAge: 3 * 24 * 60 * 60 * 1000
+});
+
     res.status(200).json({ email: user.email, name: user.name, role: user.role, referral_code: user.referral_code });
   } catch (error) {
     res.status(400);
@@ -223,7 +240,14 @@ const loginAsUser = async (req, res, next) => {
     const token = createToken(user.id);
 
     // Replace current cookie with impersonated user's cookie
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'Lax', maxAge: 3 * 24 * 60 * 60 * 1000 });
+    const isProduction = process.env.NODE_ENV === 'production';
+
+res.cookie('token', token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  maxAge: 3 * 24 * 60 * 60 * 1000
+});
 
     res.status(200).json({ email: user.email, name: user.name, role: user.role, referral_code: user.referral_code, message: 'Impersonation active' });
   } catch (error) {
